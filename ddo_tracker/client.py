@@ -71,12 +71,14 @@ class DDOLibraryClient:
         barcode: str,
         pin: str,
         institution: str = "",
+        service_profile: str = "Iguana",
         session: Optional[requests.Session] = None,
         timeout: int = DEFAULT_TIMEOUT,
     ) -> None:
         self.barcode = barcode
         self.pin = pin
         self.institution = institution
+        self.service_profile = service_profile
         self.timeout = timeout
         self.session = session or requests.Session()
         self.session.headers.update(
@@ -147,7 +149,7 @@ class DDOLibraryClient:
                 "user/credentials",
                 {
                     "language": "eng",
-                    "serviceProfile": "",
+                    "serviceProfile": self.service_profile,
                     "locationProfile": "",
                     "user": self.barcode,
                     "password": self.pin,

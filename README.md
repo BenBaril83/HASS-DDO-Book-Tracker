@@ -154,13 +154,12 @@ linked card and read its `loans` → switch back to the owner.
 
 ### A note on reliability
 
-This rides on an undocumented, JavaScript-driven surface, so the **login /
-session handshake** was reconstructed from a captured browser session rather
-than from documentation, and DDO could change it at any time. The **parsing**
-of the loan data (the part most likely to matter day to day) is covered by
-tests that run against real captured API responses. If a library-side change
-breaks login, the failure is loud (a clear auth error), and the fix is
-localized to `ddo_tracker/client.py`.
+This rides on an undocumented, JavaScript-driven surface, so DDO could change
+it at any time. The **login request** (endpoint, fields, and values — including
+`serviceProfile: "Iguana"`) and the **loan parsing** are both verified against
+real captured sessions and covered by tests. If a library-side change ever
+breaks login, the failure is loud (a clear auth error) and the fix is localized
+to `ddo_tracker/client.py`.
 
 ## Development
 

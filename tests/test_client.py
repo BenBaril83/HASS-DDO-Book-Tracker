@@ -41,6 +41,7 @@ class FakeSession:
         self.switch_calls = []
         self.active_user = None
         self.login_ok = True
+        self.credentials_body = None
 
     def get(self, url, timeout=None):
         if "jsSettings" in url:
@@ -50,6 +51,7 @@ class FakeSession:
     def post(self, url, json=None, timeout=None):
         req = (json or {}).get("request", {})
         if "user/credentials" in url:
+            self.credentials_body = req
             if not self.login_ok:
                 return FakeResponse({"response": {"error": {"message": "bad"}}})
             return FakeResponse({"response": {"sessionId": "BODYTOKEN"}})
@@ -80,6 +82,22 @@ def test_login_success_sets_token():
     client.login()
     assert client._url_token == "URLTOKEN123"
     assert client._body_token == "BODYTOKEN"
+
+
+def test_login_sends_verified_payload():
+    # Field set + values confirmed against a captured login request.
+    session = FakeSession()
+    client = DDOLibraryClient(barcode="00006002413000", pin="secret", session=session)
+    client.login()
+    body = session.credentials_body
+    assert body == {
+        "language": "eng",
+        "serviceProfile": "Iguana",
+        "locationProfile": "",
+        "user": "00006002413000",
+        "password": "secret",
+        "institution": "",
+    }
 
 
 def test_login_failure_raises():
