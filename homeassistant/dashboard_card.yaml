@@ -1,0 +1,26 @@
+# A Markdown dashboard card that lists every book across all accounts,
+# sorted soonest-due first. Add it to a Lovelace view (Edit Dashboard >
+# Add Card > Manual) and paste this YAML.
+
+type: markdown
+title: 📚 Library books
+content: >-
+  {% set items = state_attr('sensor.ddo_library_books', 'items') or [] %}
+  {% if items | count == 0 %}
+  No books currently on loan. 🎉
+  {% else %}
+  | Due | When | Title | Who |
+  | --- | --- | --- | --- |
+  {% for it in items -%}
+  | {{ it.due_date }} |
+  {%- if it.days_until_due is none %} ?
+  {%- elif it.days_until_due < 0 %} ⚠️ overdue {{ -it.days_until_due }}d
+  {%- elif it.days_until_due == 0 %} ⏰ today
+  {%- else %} {{ it.days_until_due }}d
+  {%- endif %} | {{ it.title }} | {{ it.account_name }} |
+  {% endfor %}
+
+  _{{ state_attr('sensor.ddo_library_books', 'overdue_count') }} overdue ·
+  {{ state_attr('sensor.ddo_library_books', 'due_soon_count') }} due within 3 days ·
+  updated {{ state_attr('sensor.ddo_library_books', 'generated_at') }}_
+  {% endif %}

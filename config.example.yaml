@@ -1,0 +1,39 @@
+# Copy this to config.yaml and fill in your real barcode(s) and PIN(s).
+# config.yaml is git-ignored so your credentials never get committed.
+#
+# Because DDO family cards are usually LINKED, you normally only need ONE
+# account here (your own) with include_linked: true — the tracker will read
+# every linked card through that single login.
+#
+# If some of your cards are NOT linked to each other, list each login here.
+
+accounts:
+  - barcode: "00000000000000"   # the number on your library card
+    pin: "1234"                 # your account PIN
+    include_linked: true        # also read cards linked to this one
+    institution: ""             # DDO uses "QMBDO"; "" also works
+
+  # - barcode: "11111111111111"
+  #   pin: "5678"
+  #   include_linked: false
+
+# --- Optional: iCalendar (.ics) feed of due dates ---------------------------
+# `python -m ddo_tracker calendar` writes this file; subscribe to it from
+# Google Calendar (Other calendars > From URL) or import it.
+calendar:
+  output_path: "ddo_due_dates.ics"
+  reminder_days_before: 1               # popup reminder N days before due
+  calendar_name: "DDO Library due dates"
+
+# --- Optional: emailed digest ----------------------------------------------
+# `python -m ddo_tracker digest --send` emails this summary.
+# For Gmail, create an App Password (https://myaccount.google.com/apppasswords)
+# with 2-Step Verification enabled and use it as `password` below.
+# email:
+#   host: "smtp.gmail.com"
+#   port: 587
+#   username: "you@gmail.com"
+#   password: "your-16-char-app-password"
+#   sender: "you@gmail.com"
+#   recipients:
+#     - "you@gmail.com"
