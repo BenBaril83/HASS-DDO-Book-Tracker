@@ -11,13 +11,23 @@ reads the same JSON endpoints its own JavaScript uses.
 ## The key idea: one login covers all your cards
 
 DDO family cards can be **linked**. When cards are linked, logging in with a
-single card lets you read the loans on every linked card too. So even though
-you have 4 accounts, you normally only need **one** barcode + PIN configured —
-the tracker fetches your card, then "switches" into each linked card and reads
-its loans as well.
+single card lets you read the loans on every linked card too. So you normally
+only need **one** barcode + PIN configured — the tracker fetches your card,
+then "switches" into each linked card and reads its loans as well.
 
-(If any of your cards are *not* linked to each other, you can also list several
-logins in the config — see below.)
+### Which linked cards can be read
+
+The library only lets you *view* linked cards where you have that permission —
+typically **dependent** cards (e.g. your children). A **peer** link (e.g. a
+spouse's card) shows up as linked, but the library won't let you read it
+through your login; the tracker detects this, **skips that card with a logged
+warning, and keeps going** — it never fails because of one unreadable card.
+
+To also track a peer's books, just add *their* card as its own login:
+
+- **CLI:** list a second account in `config.yaml` (see below).
+- **Home Assistant:** add the integration a second time with that card's
+  barcode + PIN.
 
 ## What you get
 
@@ -153,6 +163,11 @@ integration: add your card once in the UI and get sensors with no YAML.
 Refresh interval and whether to include linked accounts are adjustable under
 the integration's **Configure** (options) button.
 
+**Multiple logins:** you can add the integration more than once — one entry per
+card you have credentials for. Use this to cover a peer (e.g. spouse) card that
+can't be read through your own login. Each entry is keyed by borrower ID, so
+adding the same card twice is prevented.
+
 > Maintainer note: HACS shows the integration best once the repo has a
 > description + topics and at least one **GitHub release/tag**. CI
 > (`hassfest` + the HACS action) validates the integration on every push.
@@ -202,9 +217,10 @@ linked card and read its `loans` → switch back to the owner.
 ### A note on reliability
 
 This rides on an undocumented, JavaScript-driven surface, so DDO could change
-it at any time. The **login request** (endpoint, fields, and values — including
-`serviceProfile: "Iguana"`) and the **loan parsing** are both verified against
-real captured sessions and covered by tests. If a library-side change ever
+it at any time. The **session bootstrap**, the **login request** (endpoint,
+fields, and values — including `serviceProfile: "Iguana"`), the **switchuser**
+call, and the **loan parsing** are all verified against real captured sessions
+and covered by tests. If a library-side change ever
 breaks login, the failure is loud (a clear auth error) and the fix is localized
 to `ddo_tracker/client.py`.
 
