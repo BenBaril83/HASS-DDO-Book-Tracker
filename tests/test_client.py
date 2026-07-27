@@ -43,10 +43,15 @@ class FakeSession:
         self.login_ok = True
         self.credentials_body = None
 
-    def get(self, url, timeout=None):
+    def get(self, url, timeout=None, params=None, headers=None):
         if "jsSettings" in url:
+            # Real bootstrap requires the SIDTKN param; assert it's passed.
+            assert params and params.get("SIDTKN") == "SID123"
             return FakeResponse(None, text=JS_SETTINGS_TEXT)
-        return FakeResponse(None, text="<html></html>")
+        # Landing page embeds the session token inline.
+        return FakeResponse(
+            None, text="<script>Vfocus.Settings.sessionID = 'SID123';</script>"
+        )
 
     def post(self, url, json=None, timeout=None):
         req = (json or {}).get("request", {})
@@ -76,10 +81,18 @@ def make_client(session=None):
     return DDOLibraryClient(barcode="0000", pin="1234", session=session or FakeSession())
 
 
+def test_extract_sidtkn():
+    from ddo_tracker.client import DDOLibraryClient as C
+
+    assert C._extract_sidtkn("x Vfocus.Settings.sessionID = 'ABC123'; y") == "ABC123"
+    assert C._extract_sidtkn("no token here") is None
+
+
 def test_login_success_sets_token():
     session = FakeSession()
     client = make_client(session)
     client.login()
+    assert client._sidtkn == "SID123"
     assert client._url_token == "URLTOKEN123"
     assert client._body_token == "BODYTOKEN"
 
