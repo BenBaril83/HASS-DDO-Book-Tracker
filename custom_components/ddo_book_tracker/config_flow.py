@@ -59,9 +59,12 @@ class DDOConfigFlow(ConfigFlow, domain=DOMAIN):
                     user_input[CONF_PIN].strip(),
                     user_input.get(CONF_INSTITUTION, DEFAULT_INSTITUTION),
                 )
-            except DDOAuthError:
+            except DDOAuthError as err:
+                _LOGGER.warning("DDO login rejected the barcode/PIN: %s", err)
                 errors["base"] = "invalid_auth"
-            except DDOLibraryError:
+            except DDOLibraryError as err:
+                # e.g. bootstrap couldn't reach the site / find the session token.
+                _LOGGER.warning("DDO login could not reach the library: %s", err)
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001 - defensive; log and show generic error
                 _LOGGER.exception("Unexpected error validating DDO login")

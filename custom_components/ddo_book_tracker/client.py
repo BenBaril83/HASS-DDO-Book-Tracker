@@ -26,6 +26,7 @@ an undocumented surface it can change without notice; the parsing of loan data
 from __future__ import annotations
 
 import re
+import time
 from typing import Any, Optional
 
 import requests
@@ -36,6 +37,9 @@ BASE_URL = "https://webopac.ddo.qc.ca/iguana/"
 MAIN_PAGE = BASE_URL + "www.main.cls?sUrl=UserActivities"
 JS_SETTINGS = BASE_URL + "www.jsSettings.cls"
 REST_SERVER = BASE_URL + "Rest.Server.cls"
+
+# The site stamps this version into its asset/settings URLs.
+JS_VERSION = "6.5.01.3"
 
 DEFAULT_TIMEOUT = 30
 USER_AGENT = (
@@ -90,6 +94,7 @@ class DDOLibraryClient:
             }
         )
         # Populated during bootstrap()/login().
+        self._sidtkn: Optional[str] = None  # session token from the landing page
         self._url_token: Optional[str] = None  # query-string sessionId
         self._body_token: Optional[str] = None  # response sessionId
         self._logged_in = False
@@ -98,17 +103,45 @@ class DDOLibraryClient:
     # Session bootstrap + login
     # ------------------------------------------------------------------ #
     def bootstrap(self) -> None:
-        """Establish the CSP session cookie and grab the URL session token."""
-        # Loading the main page sets the CSPSESSIONID cookie.
-        self.session.get(MAIN_PAGE, timeout=self.timeout)
-        # jsSettings embeds Vfocus.Settings.uaUrl with the query sessionId.
-        resp = self.session.get(JS_SETTINGS, timeout=self.timeout)
+        """Establish the session and grab the URL session token.
+
+        The landing page sets the CSPSESSIONID cookie and embeds the session
+        token (``Vfocus.Settings.sessionID``) in its inline script. The REST
+        token we need for API calls is only rendered by ``jsSettings`` when it
+        is called with that SIDTKN (and the version/timestamp the site uses) —
+        called bare it returns an empty body.
+        """
+        resp = self.session.get(MAIN_PAGE, timeout=self.timeout)
+        self._sidtkn = self._extract_sidtkn(resp.text)
+        if not self._sidtkn:
+            raise DDOLibraryError(
+                "Could not find the session token on the library landing page; "
+                "the site may be unreachable or its layout changed."
+            )
+        params = {
+            "t": int(time.time() * 1000),
+            "version": JS_VERSION,
+            "SIDTKN": self._sidtkn,
+        }
+        # jsSettings embeds Vfocus.Settings.uaUrl with the REST sessionId.
+        resp = self.session.get(
+            JS_SETTINGS,
+            params=params,
+            headers={"Referer": MAIN_PAGE},
+            timeout=self.timeout,
+        )
         self._url_token = self._extract_url_token(resp.text)
         if not self._url_token:
             raise DDOLibraryError(
                 "Could not locate the REST session token in jsSettings; "
                 "the site layout may have changed."
             )
+
+    @staticmethod
+    def _extract_sidtkn(html: str) -> Optional[str]:
+        """Pull SIDTKN from the ``Vfocus.Settings.sessionID`` inline script."""
+        match = re.search(r"Vfocus\.Settings\.sessionID\s*=\s*'([^']+)'", html)
+        return match.group(1) if match else None
 
     @staticmethod
     def _extract_url_token(js_text: str) -> Optional[str]:
