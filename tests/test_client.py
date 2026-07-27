@@ -42,6 +42,7 @@ class FakeSession:
         self.active_user = None
         self.login_ok = True
         self.credentials_body = None
+        self.invalid_switch_ids = set()
 
     def get(self, url, timeout=None, params=None, headers=None):
         if "jsSettings" in url:
@@ -65,8 +66,13 @@ class FakeSession:
         if "user/linkedaccounts" in url:
             return FakeResponse(json_load("linkedaccounts.json"))
         if "user/switchuser" in url:
-            self.switch_calls.append(req.get("userId"))
-            self.active_user = req.get("userId")
+            uid = req.get("userId")
+            self.switch_calls.append(uid)
+            if uid in self.invalid_switch_ids:
+                return FakeResponse(
+                    {"response": {"error": {"message": "invalidUserId"}}}
+                )
+            self.active_user = uid
             return FakeResponse({"response": {"result": 1}})
         if "user/loans" in url:
             return FakeResponse(json_load("loans.json"))
@@ -148,6 +154,36 @@ def test_fetch_all_accounts_reads_primary_and_linked():
         for loan in account.loans:
             assert loan.account_id == account.account_id
             assert loan.account_name == account.name
+
+
+def test_fetch_all_accounts_returns_to_owner_between_switches():
+    session = FakeSession()
+    client = make_client(session)
+    client.fetch_all_accounts(include_linked=True)
+    owner = "QMBDO.00000000000001"
+    # Every linked switch is immediately followed by a switch back to owner.
+    linked_switches = [uid for uid in session.switch_calls if uid != owner]
+    assert len(linked_switches) == 3
+    # owner switch-backs equal the number of linked accounts visited.
+    assert session.switch_calls.count(owner) == 3
+    # Pattern is linked, owner, linked, owner, ...
+    assert session.switch_calls[1::2] == [owner, owner, owner]
+
+
+def test_fetch_all_accounts_skips_unreadable_linked():
+    session = FakeSession()
+    # First linked account can't be switched into (invalidUserId).
+    session.invalid_switch_ids = {"QMBDO.00000000000002"}
+    client = make_client(session)
+    accounts = client.fetch_all_accounts(include_linked=True)
+
+    # Primary + the two readable linked accounts (the bad one is skipped).
+    ids = [a.account_id for a in accounts]
+    assert "QMBDO.00000000000002" not in ids
+    assert len(accounts) == 3
+    assert accounts[0].is_primary is True
+    # We still returned to the owner after the failed switch.
+    assert session.switch_calls[-1] == "QMBDO.00000000000001"
 
 
 def test_fetch_all_accounts_without_linked():
