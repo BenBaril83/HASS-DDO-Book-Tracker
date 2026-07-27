@@ -157,8 +157,10 @@ integration: add your card once in the UI and get sensors with no YAML.
 **Entities created** (grouped under one "DDO Library" device):
 
 - One sensor **per account** — state = books on loan; attributes include a
-  `books` list (title, author, due date, days until due) and `next_due_date`.
-- **Total on loan**, **Overdue**, and **Next due date** summary sensors.
+  `books` list (title, author, due date, days until due), `next_due_date`, and
+  a `reservations` list (holds — queue position or "ready for pickup").
+- **Total on loan**, **Overdue**, **Next due date**, **Reserved** (total holds),
+  and **Ready for pickup** (holds waiting on the shelf) summary sensors.
 
 Refresh interval and whether to include linked accounts are adjustable under
 the integration's **Configure** (options) button.

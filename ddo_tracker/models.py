@@ -98,17 +98,83 @@ class Loan:
 
 
 @dataclass
+class Reservation:
+    """A hold/reservation the borrower has placed on an item."""
+
+    title: str
+    author: str
+    queue_position: int = 0
+    is_ready: bool = False  # waiting on the hold shelf for pickup
+    available_until: Optional[date] = None  # pick up by this date
+    pickup_location: str = ""
+    reserved_since: Optional[date] = None
+    expiry_date: Optional[date] = None
+    barcode: str = ""
+    doc_type: str = ""
+    isbn: str = ""
+    account_id: str = ""
+    account_name: str = ""
+
+    @classmethod
+    def from_api(cls, item: dict[str, Any]) -> "Reservation":
+        available_until = parse_api_date(item.get("availableUntil", ""))
+        pickup = item.get("pickupLocation") or ""
+        if not pickup:
+            locations = item.get("pickupLocations") or []
+            if isinstance(locations, list) and locations:
+                first = locations[0]
+                pickup = first.get("name", "") if isinstance(first, dict) else str(first)
+        return cls(
+            title=_clean_title(item.get("title", "")),
+            author=_clean_author(item.get("author", "")),
+            queue_position=int(item.get("queuePosition", 0) or 0),
+            is_ready=available_until is not None,
+            available_until=available_until,
+            pickup_location=pickup,
+            reserved_since=parse_api_date(item.get("reservedSince", "")),
+            expiry_date=parse_api_date(item.get("expiryDate", "")),
+            barcode=str(item.get("barcode", "")),
+            doc_type=item.get("docType", ""),
+            isbn=_extract_isbn(item.get("image", "")),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "title": self.title,
+            "author": self.author,
+            "queue_position": self.queue_position,
+            "is_ready": self.is_ready,
+            "available_until": self.available_until.isoformat()
+            if self.available_until
+            else None,
+            "pickup_location": self.pickup_location,
+            "reserved_since": self.reserved_since.isoformat()
+            if self.reserved_since
+            else None,
+            "isbn": self.isbn,
+            "doc_type": self.doc_type,
+            "account_id": self.account_id,
+            "account_name": self.account_name,
+        }
+
+
+@dataclass
 class Account:
-    """A borrower account and the items it currently has on loan."""
+    """A borrower account, its current loans and its reservations."""
 
     account_id: str
     name: str
     loans: list[Loan] = field(default_factory=list)
+    reservations: list[Reservation] = field(default_factory=list)
     is_primary: bool = False
 
     @property
     def item_count(self) -> int:
         return len(self.loans)
+
+    @property
+    def reservations_ready(self) -> int:
+        return sum(1 for r in self.reservations if r.is_ready)
 
     @property
     def next_due_date(self) -> Optional[date]:
@@ -125,6 +191,9 @@ class Account:
             if self.next_due_date
             else None,
             "loans": [loan.to_dict() for loan in self.loans],
+            "reservation_count": len(self.reservations),
+            "reservations_ready": self.reservations_ready,
+            "reservations": [r.to_dict() for r in self.reservations],
         }
 
 

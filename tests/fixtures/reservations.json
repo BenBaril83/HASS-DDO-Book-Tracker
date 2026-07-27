@@ -1,0 +1,35 @@
+{
+  "response": {
+    "items": [
+      {
+        "title": "Dog Man /",
+        "author": "Pilkey, Dav,1966- author.",
+        "barcode": "31496007000001",
+        "docType": "Juvenile - Fiction",
+        "image": "https://webopac.ddo.qc.ca/iguana/php/electre.php?type=cover&ean=9781338741063!!!###!!!MATTYPE=JFIC",
+        "queuePosition": 0,
+        "availableSince": "20260728",
+        "availableUntil": "20260805",
+        "pickupLocation": "DOLLARD-DES-ORMEAUX",
+        "reservedSince": "20260701",
+        "expiryDate": "20260810",
+        "requestStatus": ""
+      },
+      {
+        "title": "The bad guys /",
+        "author": "Blabey, Aaron, author.",
+        "barcode": "31496007000002",
+        "docType": "Juvenile - Fiction",
+        "image": "https://webopac.ddo.qc.ca/iguana/php/electre.php?type=cover&ean=9780545912402!!!###!!!MATTYPE=JFIC",
+        "queuePosition": 3,
+        "availableSince": "",
+        "availableUntil": "",
+        "pickupLocations": [{"name": "DOLLARD-DES-ORMEAUX"}],
+        "reservedSince": "20260715",
+        "expiryDate": "",
+        "requestStatus": ""
+      }
+    ],
+    "totalRecords": 2
+  }
+}

@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. This project adheres
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Reservations / holds.** The client now reads each account's reservations
+  (`user/reservations`); the integration exposes them on the per-account sensor
+  (`reservations` list with queue position or "ready for pickup" + pickup
+  location), plus **Reserved** and **Ready for pickup** summary sensors. Both
+  dashboards gained a "Holds" section.
+
 ## [0.1.0] - 2026-07-27
 
 First release.

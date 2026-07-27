@@ -76,6 +76,8 @@ class FakeSession:
             return FakeResponse({"response": {"result": 1}})
         if "user/loans" in url:
             return FakeResponse(json_load("loans.json"))
+        if "user/reservations" in url:
+            return FakeResponse(json_load("reservations.json"))
         raise AssertionError(f"unexpected url {url}")
 
 
@@ -135,6 +137,25 @@ def test_get_loans_parses_items():
     assert loans[0].title == "Judy Moody"
 
 
+def test_get_reservations_parses_items():
+    client = make_client()
+    client.login()
+    res = client.get_reservations()
+    assert len(res) == 2
+
+    ready = [r for r in res if r.is_ready]
+    assert len(ready) == 1
+    assert ready[0].title == "Dog Man"
+    assert ready[0].isbn == "9781338741063"
+    assert ready[0].pickup_location == "DOLLARD-DES-ORMEAUX"
+    assert ready[0].available_until is not None
+
+    queued = [r for r in res if not r.is_ready]
+    assert queued[0].queue_position == 3
+    # pickup_location falls back to the pickupLocations list entry
+    assert queued[0].pickup_location == "DOLLARD-DES-ORMEAUX"
+
+
 def test_fetch_all_accounts_reads_primary_and_linked():
     session = FakeSession()
     client = make_client(session)
@@ -149,11 +170,15 @@ def test_fetch_all_accounts_reads_primary_and_linked():
     assert linked_ids.issubset(set(session.switch_calls))
     assert session.switch_calls[-1] == "QMBDO.00000000000001"  # back to owner
 
-    # Loans get their owning account stamped on them.
+    # Loans and reservations get their owning account stamped on them.
     for account in accounts[1:]:
         for loan in account.loans:
             assert loan.account_id == account.account_id
             assert loan.account_name == account.name
+        assert len(account.reservations) == 2
+        for res in account.reservations:
+            assert res.account_id == account.account_id
+            assert res.account_name == account.name
 
 
 def test_fetch_all_accounts_returns_to_owner_between_switches():
