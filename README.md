@@ -177,7 +177,7 @@ fill in; add via **Edit dashboard → Add card → Manual**):
 - [`homeassistant/dashboard_fancy.yaml`](homeassistant/dashboard_fancy.yaml)
   — a **cover-tile "bookshelf"** grouped by family member with color-coded due
   badges. Covers come from Open Library by ISBN (gradient fallback otherwise).
-  Requires the HACS **Frontend** card `html-template-card`.
+  Requires the HACS **Frontend** card `button-card` (`custom:button-card`).
 
 > Maintainer note: HACS shows the integration best once the repo has a
 > description + topics and at least one **GitHub release/tag**. CI
