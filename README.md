@@ -130,9 +130,37 @@ Two optional ways to be reminded, both configured in `config.yaml` (see the
 Scheduling both from Home Assistant is covered in
 [`homeassistant/calendar_and_digest.md`](homeassistant/calendar_and_digest.md).
 
-## Home Assistant
+## Home Assistant — HACS custom integration (recommended)
 
-The `homeassistant/` folder has everything to surface this in HA:
+The `custom_components/ddo_book_tracker/` folder is a full Home Assistant
+integration: add your card once in the UI and get sensors with no YAML.
+
+**Install via HACS**
+
+1. HACS → ⋮ → **Custom repositories** → add `https://github.com/BenBaril83/HASS-DDO-Book-Tracker`, category **Integration**.
+2. Install **DDO Library Book Tracker**, then **restart** Home Assistant.
+3. **Settings → Devices & Services → Add Integration → DDO Library Book Tracker**, and enter one card's barcode + PIN. Linked family cards are picked up automatically.
+
+**Or install manually:** copy `custom_components/ddo_book_tracker/` into your HA
+`config/custom_components/` and restart.
+
+**Entities created** (grouped under one "DDO Library" device):
+
+- One sensor **per account** — state = books on loan; attributes include a
+  `books` list (title, author, due date, days until due) and `next_due_date`.
+- **Total on loan**, **Overdue**, and **Next due date** summary sensors.
+
+Refresh interval and whether to include linked accounts are adjustable under
+the integration's **Configure** (options) button.
+
+> Maintainer note: HACS shows the integration best once the repo has a
+> description + topics and at least one **GitHub release/tag**. CI
+> (`hassfest` + the HACS action) validates the integration on every push.
+
+## Home Assistant — command_line sensor (no-install alternative)
+
+If you'd rather not install a custom component, the `homeassistant/` folder
+drives the same data through a `command_line` sensor:
 
 | File | What it is |
 |------|------------|

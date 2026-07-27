@@ -1,0 +1,36 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "DDO Library Book Tracker",
+        "description": "Sign in with one library card. Linked family cards are read automatically.",
+        "data": {
+          "barcode": "Library card barcode",
+          "pin": "PIN",
+          "institution": "Institution (leave blank for DDO)",
+          "include_linked": "Also read linked accounts",
+          "scan_interval_hours": "Refresh interval (hours)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid barcode or PIN.",
+      "cannot_connect": "Could not reach the library website.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This library account is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "DDO Library options",
+        "data": {
+          "scan_interval_hours": "Refresh interval (hours)",
+          "include_linked": "Also read linked accounts"
+        }
+      }
+    }
+  }
+}
