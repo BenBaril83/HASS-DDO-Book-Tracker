@@ -21,6 +21,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Informational only: the HACS action validates *public HACS-store
+      # inclusion* (repo description, topics, brand assets, public visibility)
+      # — none of which are required to install this integration via a HACS
+      # "custom repository", which is how a personal/private repo is deployed.
+      # `hassfest` (above) is the authoritative check of the integration, so a
+      # store-inclusion miss is surfaced in the logs but must not fail the build.
       - uses: hacs/action@main
+        continue-on-error: true
         with:
           category: integration
