@@ -1,0 +1,32 @@
+{
+  "response": {
+    "linkedAccounts": [
+      {
+        "id": "QMBDO.00000000000002",
+        "name": "DOE JANE",
+        "alias": "DOE JANE",
+        "type": 1,
+        "reciprocalType": 0,
+        "status": 1
+      },
+      {
+        "id": "QMBDO.00000000000003",
+        "name": "DOE ALEX",
+        "alias": "DOE ALEX",
+        "type": 1,
+        "reciprocalType": 2,
+        "status": 1
+      },
+      {
+        "id": "QMBDO.00000000000004",
+        "name": "DOE SAM",
+        "alias": "DOE SAM",
+        "type": 1,
+        "reciprocalType": 0,
+        "status": 1
+      }
+    ],
+    "ownId": "QMBDO.00000000000001",
+    "activeId": "QMBDO.00000000000001"
+  }
+}

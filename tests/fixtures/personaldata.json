@@ -1,0 +1,16 @@
+{
+  "response": {
+    "alias": "",
+    "name": "DOE JOHN",
+    "address": "1 SAMPLE ST - ANYTOWN  QUEBEC  H0H 0H0",
+    "barcode": "00000000000001",
+    "email": "user@example.com",
+    "expiryDate": "20260923",
+    "interests": {
+      "active": 0,
+      "ask": 0,
+      "keepLoanHistory": 0
+    },
+    "blocks": []
+  }
+}

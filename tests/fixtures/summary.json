@@ -1,0 +1,19 @@
+{
+  "response": {
+    "loans": {
+      "itemsOnLoan": 4,
+      "itemsOverdue": 0,
+      "itemsSoonOverdue": 0,
+      "firstDueDate": "20260730"
+    },
+    "reservations": {
+      "itemsReserved": 0,
+      "itemsAvailable": 0
+    },
+    "payment": 0,
+    "pendingLinkRequests": 0,
+    "alias": "DOE JOHN",
+    "borrowerId": "QMBDO.00000000000001",
+    "activeInterests": 0
+  }
+}

@@ -1,0 +1,33 @@
+# Home Assistant `command_line` sensor for the DDO book tracker.
+#
+# This is a YAML-only integration (no config flow), so it lives in
+# configuration.yaml and needs a Home Assistant RESTART to load (a reload
+# won't pick it up). Merge this block into your existing `command_line:`
+# section, or include this file from configuration.yaml, e.g.:
+#
+#     command_line: !include homeassistant/command_line_sensor.yaml
+#
+# The command must be able to find both the `ddo_tracker` package and your
+# credentials. The simplest, most reliable approach is a tiny wrapper script
+# (see run.sh in this folder) that activates a venv and exports DDO_CONFIG,
+# then prints the JSON. Point `command:` at that wrapper with an ABSOLUTE path.
+
+- sensor:
+    name: DDO Library Books
+    unique_id: ddo_library_books
+    # Use an absolute path to the wrapper; HA's working directory is not /config.
+    command: "/config/ddo/run.sh"
+    command_timeout: 90
+    # State = how many items are out across all accounts.
+    value_template: "{{ value_json.total_items }}"
+    unit_of_measurement: "books"
+    # Expose the rest of the payload as attributes for cards & automations.
+    json_attributes:
+      - generated_at
+      - overdue_count
+      - due_soon_count
+      - next_due_date
+      - accounts
+      - items
+    # The library data changes slowly; poll a few times a day.
+    scan_interval: 21600  # 6 hours

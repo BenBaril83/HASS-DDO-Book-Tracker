@@ -1,0 +1,35 @@
+# Example reminder automation for the DDO book tracker.
+#
+# Create this via the HA UI (Settings > Automations) or add it to your
+# automations.yaml. It fires once each morning and notifies you only when
+# something is due within 3 days or already overdue.
+#
+# A template is used in the condition and message because the per-book data
+# lives in a JSON attribute of the command_line sensor — there is no native
+# helper for "iterate the books in this JSON blob", which is exactly the case
+# where a template is the appropriate tool.
+
+- alias: "Library books due soon reminder"
+  id: ddo_books_due_soon
+  mode: single
+  triggers:
+    - trigger: time
+      at: "09:00:00"
+  conditions:
+    - condition: template
+      value_template: >-
+        {{ (state_attr('sensor.ddo_library_books', 'due_soon_count') | int(0)) > 0
+           or (state_attr('sensor.ddo_library_books', 'overdue_count') | int(0)) > 0 }}
+  actions:
+    - action: notify.notify
+      data:
+        title: "📚 Library books due soon"
+        message: >-
+          {% set items = state_attr('sensor.ddo_library_books', 'items') or [] %}
+          {%- for it in items if it.days_until_due is not none and it.days_until_due <= 3 %}
+          • {{ it.title }} ({{ it.account_name }}) —
+          {%- if it.days_until_due < 0 %} OVERDUE by {{ -it.days_until_due }}d
+          {%- elif it.days_until_due == 0 %} due TODAY
+          {%- else %} in {{ it.days_until_due }}d
+          {%- endif %}
+          {%- endfor %}
