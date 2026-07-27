@@ -168,6 +168,12 @@ card you have credentials for. Use this to cover a peer (e.g. spouse) card that
 can't be read through your own login. Each entry is keyed by borrower ID, so
 adding the same card twice is prevented.
 
+**Dashboard:** [`homeassistant/dashboard_by_card.yaml`](homeassistant/dashboard_by_card.yaml)
+is a single Markdown card that lists every book grouped by card and sorted by
+due date, with overdue/due-soon flags and a totals header. It auto-discovers the
+per-account sensors (no entity IDs to fill in). Add it via **Edit dashboard →
+Add card → Manual** and paste the file's contents.
+
 > Maintainer note: HACS shows the integration best once the repo has a
 > description + topics and at least one **GitHub release/tag**. CI
 > (`hassfest` + the HACS action) validates the integration on every push.
