@@ -77,6 +77,8 @@ export DDO_PIN=1234
 ```bash
 python3 -m ddo_tracker list      # pretty table (default)
 python3 -m ddo_tracker json      # machine-readable JSON
+python3 -m ddo_tracker calendar  # write/print an .ics feed of due dates
+python3 -m ddo_tracker digest    # render an email digest (--send to email it)
 python3 -m ddo_tracker list -c /path/to/config.yaml
 ```
 
@@ -110,6 +112,23 @@ ddo-tracker list
   ]
 }
 ```
+
+## Calendar & email
+
+Two optional ways to be reminded, both configured in `config.yaml` (see the
+`calendar:` and `email:` sections in `config.example.yaml`):
+
+- **Google Calendar** — `python -m ddo_tracker calendar -o due.ics` writes an
+  iCalendar feed with an all-day event (and reminder) per book. Subscribe to it
+  from Google Calendar (**Other calendars → From URL**); no Google API
+  credentials needed. Events use stable UIDs, so refreshing the feed updates
+  existing entries and drops returned books.
+- **Email digest** — `python -m ddo_tracker digest` prints a grouped
+  (overdue / due-soon / later) summary; add `--send` to email it. Defaults
+  target Gmail SMTP — use a [Gmail App Password](https://myaccount.google.com/apppasswords).
+
+Scheduling both from Home Assistant is covered in
+[`homeassistant/calendar_and_digest.md`](homeassistant/calendar_and_digest.md).
 
 ## Home Assistant
 

@@ -5,8 +5,16 @@ report every book currently on loan (across linked family accounts) with due
 dates, so you never miss a return.
 """
 
+from .calendar import build_ics
 from .client import DDOAuthError, DDOLibraryClient, DDOLibraryError
-from .config import AccountConfig, Config, ConfigError, load_config
+from .config import (
+    AccountConfig,
+    CalendarConfig,
+    Config,
+    ConfigError,
+    load_config,
+)
+from .digest import EmailConfig, render_html, render_text, send_email, subject_line
 from .models import Account, Loan, parse_api_date
 from .report import all_loans, build_summary, format_table
 
@@ -18,6 +26,7 @@ __all__ = [
     "DDOAuthError",
     "Config",
     "AccountConfig",
+    "CalendarConfig",
     "ConfigError",
     "load_config",
     "Account",
@@ -26,5 +35,11 @@ __all__ = [
     "all_loans",
     "build_summary",
     "format_table",
+    "build_ics",
+    "EmailConfig",
+    "render_text",
+    "render_html",
+    "subject_line",
+    "send_email",
     "__version__",
 ]

@@ -71,6 +71,29 @@ def test_load_config_from_yaml(tmp_path):
     assert config.accounts[0].include_linked is False
 
 
+def test_load_config_parses_email_and_calendar(tmp_path):
+    cfg = tmp_path / "c.yaml"
+    cfg.write_text(
+        "accounts:\n"
+        "  - barcode: '111'\n"
+        "    pin: '222'\n"
+        "calendar:\n"
+        "  output_path: '/tmp/due.ics'\n"
+        "  reminder_days_before: 2\n"
+        "email:\n"
+        "  username: 'me@gmail.com'\n"
+        "  password: 'app-pw'\n"
+        "  recipients: 'you@example.com'\n"
+    )
+    config = load_config(str(cfg))
+    assert config.calendar.output_path == "/tmp/due.ics"
+    assert config.calendar.reminder_days_before == 2
+    assert config.email is not None
+    assert config.email.host == "smtp.gmail.com"  # default
+    assert config.email.recipients == ["you@example.com"]  # string coerced to list
+    assert config.email.sender == "me@gmail.com"  # falls back to username
+
+
 def test_load_config_from_env(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)  # avoid picking up a stray config.yaml
     monkeypatch.delenv("DDO_CONFIG", raising=False)

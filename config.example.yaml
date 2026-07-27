@@ -16,3 +16,24 @@ accounts:
   # - barcode: "11111111111111"
   #   pin: "5678"
   #   include_linked: false
+
+# --- Optional: iCalendar (.ics) feed of due dates ---------------------------
+# `python -m ddo_tracker calendar` writes this file; subscribe to it from
+# Google Calendar (Other calendars > From URL) or import it.
+calendar:
+  output_path: "ddo_due_dates.ics"
+  reminder_days_before: 1               # popup reminder N days before due
+  calendar_name: "DDO Library due dates"
+
+# --- Optional: emailed digest ----------------------------------------------
+# `python -m ddo_tracker digest --send` emails this summary.
+# For Gmail, create an App Password (https://myaccount.google.com/apppasswords)
+# with 2-Step Verification enabled and use it as `password` below.
+# email:
+#   host: "smtp.gmail.com"
+#   port: 587
+#   username: "you@gmail.com"
+#   password: "your-16-char-app-password"
+#   sender: "you@gmail.com"
+#   recipients:
+#     - "you@gmail.com"

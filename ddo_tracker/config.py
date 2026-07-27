@@ -23,11 +23,13 @@ Environment variables (single-account fallback)::
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
 import yaml
+
+from .digest import EmailConfig
 
 
 @dataclass
@@ -43,8 +45,17 @@ class AccountConfig:
 
 
 @dataclass
+class CalendarConfig:
+    output_path: str = "ddo_due_dates.ics"
+    reminder_days_before: int = 1
+    calendar_name: str = "DDO Library due dates"
+
+
+@dataclass
 class Config:
     accounts: list[AccountConfig]
+    email: Optional[EmailConfig] = None
+    calendar: CalendarConfig = field(default_factory=CalendarConfig)
 
 
 class ConfigError(Exception):
@@ -90,7 +101,38 @@ def _load_yaml(path: Path) -> Config:
                 include_linked=entry.get("include_linked", True),
             )
         )
-    return Config(accounts=accounts)
+    return Config(
+        accounts=accounts,
+        email=_parse_email(data.get("email")),
+        calendar=_parse_calendar(data.get("calendar")),
+    )
+
+
+def _parse_email(raw: Optional[dict]) -> Optional[EmailConfig]:
+    if not raw:
+        return None
+    recipients = raw.get("recipients") or raw.get("to") or []
+    if isinstance(recipients, str):
+        recipients = [recipients]
+    return EmailConfig(
+        host=raw.get("host", "smtp.gmail.com"),
+        port=int(raw.get("port", 587)),
+        username=raw.get("username", ""),
+        password=str(raw.get("password", "")),
+        sender=raw.get("sender", raw.get("from", "")),
+        recipients=list(recipients),
+        use_tls=bool(raw.get("use_tls", True)),
+    )
+
+
+def _parse_calendar(raw: Optional[dict]) -> CalendarConfig:
+    if not raw:
+        return CalendarConfig()
+    return CalendarConfig(
+        output_path=raw.get("output_path", "ddo_due_dates.ics"),
+        reminder_days_before=int(raw.get("reminder_days_before", 1)),
+        calendar_name=raw.get("calendar_name", "DDO Library due dates"),
+    )
 
 
 def _load_env() -> Config:

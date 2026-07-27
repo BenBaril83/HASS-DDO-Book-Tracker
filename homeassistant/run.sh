@@ -16,4 +16,9 @@ PYTHON="${PROJECT_DIR}/.venv/bin/python3"
 [ -x "$PYTHON" ] || PYTHON="python3"
 
 cd "$PROJECT_DIR"
-exec "$PYTHON" -m ddo_tracker json
+# Forward any arguments (e.g. `run.sh calendar -o ...`, `run.sh digest --send`).
+# With no arguments, default to `json` so the command_line sensor works.
+if [ "$#" -eq 0 ]; then
+  exec "$PYTHON" -m ddo_tracker json
+fi
+exec "$PYTHON" -m ddo_tracker "$@"
