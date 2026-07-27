@@ -1,0 +1,91 @@
+# Fancier "bookshelf" dashboard — a responsive grid of cover tiles grouped by
+# family member, with color-coded due badges.
+#
+# Requires ONE HACS frontend card: "html-template-card"
+#   HACS → Frontend → search "html-template-card" → install → refresh.
+#
+# Covers come from Open Library by ISBN; books without a cover fall back to a
+# coloured gradient tile with the title overlaid. It auto-discovers the
+# integration's per-account sensors (any sensor with a `books` attribute).
+#
+# To use: Edit dashboard → Add card → Manual → paste this YAML.
+
+type: custom:html-template-card
+title: 📚 Family bookshelf
+ignore_line_breaks: true
+content: |
+  <style>
+    .ddo-summary { font-size: 1.05em; font-weight: 600; margin: 2px 2px 14px; }
+    .ddo-summary .over { color: #e5484d; }
+    .ddo-group { margin-bottom: 20px; }
+    .ddo-head {
+      display: flex; align-items: baseline; gap: 8px;
+      font-weight: 700; font-size: 1.05em; margin: 0 2px 10px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--divider-color, #8884);
+    }
+    .ddo-head .ddo-count { margin-left: auto; font-weight: 500; opacity: .7; font-size: .82em; }
+    .ddo-empty { opacity: .6; font-style: italic; margin: 2px 2px 4px; }
+    .ddo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 14px; }
+    .ddo-tile { min-width: 0; }
+    .ddo-cover {
+      position: relative; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden;
+      background-size: cover; background-position: center;
+      box-shadow: 0 2px 7px #0000006b;
+    }
+    .ddo-cover::before {
+      content: ""; position: absolute; inset: 0; z-index: -1;
+      background: linear-gradient(135deg, hsl(var(--hue), 58%, 56%), hsl(calc(var(--hue) + 45), 60%, 40%));
+    }
+    .ddo-badge {
+      position: absolute; top: 6px; right: 6px; padding: 2px 7px; border-radius: 999px;
+      font-size: .72em; font-weight: 700; color: #fff; box-shadow: 0 1px 3px #0007;
+    }
+    .ddo-badge.over { background: #e5484d; }
+    .ddo-badge.soon { background: #f76808; }
+    .ddo-badge.ok   { background: #46a758; }
+    .ddo-badge.far  { background: #5b6472; }
+    .ddo-badge.none { background: #5b6472; }
+    .ddo-scrim {
+      position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 8px 6px;
+      font-size: .77em; font-weight: 600; line-height: 1.15; color: #fff;
+      background: linear-gradient(transparent, #000000a6 55%, #000000d9);
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .ddo-author { font-size: .72em; opacity: .72; margin: 4px 2px 0; line-height: 1.2;
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  </style>
+  {%- set accounts = states.sensor | selectattr('attributes.books', 'defined')
+        | sort(attribute='attributes.account_name')
+        | sort(attribute='attributes.is_primary', reverse=true) | list -%}
+  {%- set total = accounts | map(attribute='state') | map('int') | sum -%}
+  {%- set total_over = accounts | map(attribute='attributes.overdue_count') | map('int') | sum -%}
+  {%- set ns = namespace(h="") -%}
+  {%- for a in accounts -%}
+    {%- set books = a.attributes.books | sort(attribute='due_date') -%}
+    {%- set od = a.attributes.overdue_count | int -%}
+    {%- set ns.h = ns.h ~ '<div class="ddo-group"><div class="ddo-head">' ~ ('★ ' if a.attributes.is_primary else '') ~ a.attributes.account_name ~ '<span class="ddo-count">' ~ a.state ~ ' out' ~ (' · ' ~ od ~ ' overdue' if od > 0 else '') ~ '</span></div>' -%}
+    {%- if books | count == 0 -%}
+      {%- set ns.h = ns.h ~ '<div class="ddo-empty">Nothing out 🎉</div>' -%}
+    {%- else -%}
+      {%- set ns.h = ns.h ~ '<div class="ddo-grid">' -%}
+      {%- for b in books -%}
+        {%- set d = b.days_until_due -%}
+        {%- if d is none -%}{%- set lvl='none' -%}{%- set when='—' -%}
+        {%- elif d < 0 -%}{%- set lvl='over' -%}{%- set when=(-d)~'d over' -%}
+        {%- elif d == 0 -%}{%- set lvl='soon' -%}{%- set when='today' -%}
+        {%- elif d <= 3 -%}{%- set lvl='soon' -%}{%- set when=d~'d' -%}
+        {%- elif d <= 7 -%}{%- set lvl='ok' -%}{%- set when=d~'d' -%}
+        {%- else -%}{%- set lvl='far' -%}{%- set when=d~'d' -%}
+        {%- endif -%}
+        {%- set hue = (b.title | length * 47 + b.author | length * 13) % 360 -%}
+        {%- set cover = 'background-image:url(https://covers.openlibrary.org/b/isbn/' ~ b.isbn ~ '-M.jpg?default=false);' if b.isbn else '' -%}
+        {%- set ns.h = ns.h ~ '<div class="ddo-tile"><div class="ddo-cover" style="--hue:' ~ hue ~ ';' ~ cover ~ '">'
+            ~ '<span class="ddo-badge ' ~ lvl ~ '">' ~ when ~ '</span>'
+            ~ '<span class="ddo-scrim">' ~ b.title ~ '</span></div>'
+            ~ '<div class="ddo-author">' ~ b.author ~ '</div></div>' -%}
+      {%- endfor -%}
+      {%- set ns.h = ns.h ~ '</div>' -%}
+    {%- endif -%}
+    {%- set ns.h = ns.h ~ '</div>' -%}
+  {%- endfor -%}
+  <div class="ddo-summary">📚 {{ total }} book{{ 's' if total != 1 }} out{% if total_over %} · <span class="over">{{ total_over }} overdue</span>{% endif %}</div>{{ ns.h }}
