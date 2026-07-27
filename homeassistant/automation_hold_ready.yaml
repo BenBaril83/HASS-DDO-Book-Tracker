@@ -1,0 +1,44 @@
+# Notify when a library hold becomes ready for pickup.
+#
+# Fires when the "Ready for pickup" summary sensor rises above 0 (i.e. one or
+# more holds have landed on the pickup shelf since the last poll), and sends a
+# notification listing the title(s), whose card, where to pick up, and by when.
+#
+# Add via Settings → Automations & scenes → Create automation → Edit in YAML,
+# or drop it into your automations.yaml.
+#
+# BEFORE USING, check two entity/service names for your setup:
+#   1. The sensor entity_id. It is derived from the integration's device name.
+#      For a primary card "BARIL BENJAMIN" it is:
+#        sensor.ddo_library_baril_benjamin_ready_for_pickup
+#      Confirm under Settings → Devices & Services → DDO Library → the
+#      "Ready for pickup" entity, and adjust below if different.
+#   2. The notify service. `notify.notify` uses your default; change it to your
+#      phone, e.g. `notify.mobile_app_<your_device>`, to get a push.
+
+alias: Library hold ready for pickup
+id: ddo_hold_ready
+mode: single
+triggers:
+  - trigger: numeric_state
+    entity_id: sensor.ddo_library_baril_benjamin_ready_for_pickup
+    above: 0
+conditions: []
+actions:
+  - action: notify.notify
+    data:
+      title: 🔔 Library hold ready
+      message: >-
+        {% set s = 'sensor.ddo_library_baril_benjamin_ready_for_pickup' %}
+        {% set items = state_attr(s, 'items') or [] %}
+        {%- if items | count == 0 -%}
+        A hold is ready to pick up.
+        {%- else -%}
+        {{ items | count }} hold{{ 's' if items | count != 1 }} ready to pick up:
+        {%- for it in items %}
+        • {{ it.title }}
+        {%- if it.account_name %} ({{ it.account_name }}){% endif %}
+        {%- if it.pickup_location %} — {{ it.pickup_location }}{% endif %}
+        {%- if it.available_until %}, by {{ it.available_until }}{% endif %}
+        {%- endfor %}
+        {%- endif %}

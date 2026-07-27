@@ -181,6 +181,11 @@ fill in; add via **Edit dashboard → Add card → Manual**):
   badges. Covers come from Open Library by ISBN (gradient fallback otherwise).
   Requires the HACS **Frontend** card `button-card` (`custom:button-card`).
 
+**Notifications:** [`homeassistant/automation_hold_ready.yaml`](homeassistant/automation_hold_ready.yaml)
+sends a push when a hold becomes ready for pickup (off the **Ready for pickup**
+sensor), listing the title(s), whose card, and where to collect them. See also
+`homeassistant/automations.yaml` for a due-soon reminder.
+
 > Maintainer note: HACS shows the integration best once the repo has a
 > description + topics and at least one **GitHub release/tag**. CI
 > (`hassfest` + the HACS action) validates the integration on every push.
