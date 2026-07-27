@@ -37,11 +37,17 @@ async def async_setup_entry(
     entities.append(TotalOnLoanSensor(coordinator, entry))
     entities.append(OverdueSensor(coordinator, entry))
     entities.append(NextDueSensor(coordinator, entry))
+    entities.append(ReadyForPickupSensor(coordinator, entry))
+    entities.append(ReservedSensor(coordinator, entry))
     async_add_entities(entities)
 
 
 def _all_loans(accounts: list[Account]):
     return [loan for account in accounts for loan in account.loans]
+
+
+def _all_reservations(accounts: list[Account]):
+    return [res for account in accounts for res in account.reservations]
 
 
 class _BaseSensor(CoordinatorEntity[DDOCoordinator], SensorEntity):
@@ -104,6 +110,10 @@ class AccountSensor(_BaseSensor):
         loans = sorted(
             account.loans, key=lambda ln: (ln.due_date or date.max, ln.title)
         )
+        reservations = sorted(
+            account.reservations,
+            key=lambda r: (not r.is_ready, r.queue_position, r.title),
+        )
         return {
             "account_name": account.name,
             "is_primary": account.is_primary,
@@ -111,6 +121,8 @@ class AccountSensor(_BaseSensor):
             if account.next_due_date
             else None,
             "overdue_count": sum(1 for ln in account.loans if ln.is_overdue),
+            "reservation_count": len(account.reservations),
+            "reservations_ready": account.reservations_ready,
             "books": [
                 {
                     "title": ln.title,
@@ -122,6 +134,20 @@ class AccountSensor(_BaseSensor):
                     "renewable": ln.renewable,
                 }
                 for ln in loans
+            ],
+            "reservations": [
+                {
+                    "title": r.title,
+                    "author": r.author,
+                    "queue_position": r.queue_position,
+                    "is_ready": r.is_ready,
+                    "available_until": r.available_until.isoformat()
+                    if r.available_until
+                    else None,
+                    "pickup_location": r.pickup_location,
+                    "isbn": r.isbn,
+                }
+                for r in reservations
             ],
         }
 
@@ -175,3 +201,54 @@ class NextDueSensor(_BaseSensor):
     def native_value(self) -> date | None:
         dates = [ln.due_date for ln in _all_loans(self._accounts) if ln.due_date]
         return min(dates) if dates else None
+
+
+class ReservedSensor(_BaseSensor):
+    """Total reservations (holds) placed across every account."""
+
+    _attr_icon = "mdi:bookmark-multiple"
+    _attr_native_unit_of_measurement = "holds"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_name = "Reserved"
+
+    def __init__(self, coordinator: DDOCoordinator, entry: DDOConfigEntry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_reserved"
+
+    @property
+    def native_value(self) -> int:
+        return len(_all_reservations(self._accounts))
+
+
+class ReadyForPickupSensor(_BaseSensor):
+    """How many held items are waiting on the hold shelf for pickup."""
+
+    _attr_icon = "mdi:bell-ring"
+    _attr_native_unit_of_measurement = "holds"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_name = "Ready for pickup"
+
+    def __init__(self, coordinator: DDOCoordinator, entry: DDOConfigEntry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_ready_for_pickup"
+
+    @property
+    def native_value(self) -> int:
+        return sum(1 for r in _all_reservations(self._accounts) if r.is_ready)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        ready = [r for r in _all_reservations(self._accounts) if r.is_ready]
+        return {
+            "items": [
+                {
+                    "title": r.title,
+                    "account_name": r.account_name,
+                    "pickup_location": r.pickup_location,
+                    "available_until": r.available_until.isoformat()
+                    if r.available_until
+                    else None,
+                }
+                for r in ready
+            ]
+        }

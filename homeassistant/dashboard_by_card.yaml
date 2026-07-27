@@ -15,8 +15,9 @@ content: |
         | sort(attribute='attributes.is_primary', reverse=true) | list -%}
   {%- set total = accounts | map(attribute='state') | map('int') | sum -%}
   {%- set total_over = accounts | map(attribute='attributes.overdue_count') | map('int') | sum -%}
+  {%- set total_ready = accounts | map(attribute='attributes.reservations_ready') | map('int') | sum -%}
   {%- set due = accounts | map(attribute='attributes.next_due_date') | select('string') | list | sort -%}
-  {%- set ns = namespace(md="## 📚 " ~ total ~ " books out" ~ (" · " ~ total_over ~ " overdue" if total_over > 0 else "") ~ (" · next due " ~ due[0] if due else "") ~ "\n") -%}
+  {%- set ns = namespace(md="## 📚 " ~ total ~ " books out" ~ (" · " ~ total_over ~ " overdue" if total_over > 0 else "") ~ (" · 🔔 " ~ total_ready ~ " ready to pick up" if total_ready > 0 else "") ~ (" · next due " ~ due[0] if due else "") ~ "\n") -%}
   {%- if accounts | count == 0 -%}
     {%- set ns.md = "No DDO library sensors found yet. Is the integration set up?" -%}
   {%- endif -%}
@@ -38,5 +39,16 @@ content: |
       {%- endif -%}
       {%- set ns.md = ns.md ~ "- **" ~ b.due_date ~ "** · " ~ when ~ " — " ~ b.title ~ " · _" ~ b.author ~ "_\n" -%}
     {%- endfor -%}
+    {%- set rez = a.attributes.reservations or [] -%}
+    {%- if rez | count > 0 -%}
+      {%- set ns.md = ns.md ~ "\n_Holds:_\n" -%}
+      {%- for r in rez | sort(attribute='queue_position') -%}
+        {%- if r.is_ready -%}
+          {%- set ns.md = ns.md ~ "- 🔔 **Ready to pick up**" ~ (" (by " ~ r.available_until ~ ")" if r.available_until else "") ~ " — " ~ r.title ~ "\n" -%}
+        {%- else -%}
+          {%- set ns.md = ns.md ~ "- ⏳ #" ~ r.queue_position ~ " in queue — " ~ r.title ~ "\n" -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endif -%}
   {%- endfor -%}
   {{ ns.md }}

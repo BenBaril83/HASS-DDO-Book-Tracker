@@ -32,7 +32,7 @@ from typing import Any, Optional
 
 import requests
 
-from .models import Account, Loan
+from .models import Account, Loan, Reservation
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -233,6 +233,20 @@ class DDOLibraryClient:
         items = response.get("items", []) or []
         return [Loan.from_api(item) for item in items]
 
+    def get_reservations(self) -> list[Reservation]:
+        """Return the reservations (holds) for the *currently active* account."""
+        response = self._post(
+            "user/reservations",
+            {
+                "sessionId": self._require_login(),
+                "LocationProfile": "",
+                "range": {"from": 1, "to": 200},
+                "sort": {"sortBy": "!ReservationNumber", "sortDirection": "DESC"},
+            },
+        )
+        items = response.get("items", []) or []
+        return [Reservation.from_api(item) for item in items]
+
     def switch_user(self, user_id: str) -> None:
         """Switch the active borrower to a linked account by its id."""
         self._post(
@@ -268,7 +282,7 @@ class DDOLibraryClient:
         accounts: list[Account] = []
 
         primary = Account(account_id=own_id, name=primary_name, is_primary=True)
-        primary.loans = self._read_current_loans(own_id, primary_name)
+        self._populate_account(primary)
         accounts.append(primary)
 
         if include_linked:
@@ -292,7 +306,7 @@ class DDOLibraryClient:
         try:
             self.switch_user(account_id)
             account = Account(account_id=account_id, name=name)
-            account.loans = self._read_current_loans(account_id, name)
+            self._populate_account(account)
             return account
         except DDOLibraryError as err:
             _LOGGER.warning(
@@ -306,13 +320,31 @@ class DDOLibraryClient:
                 except DDOLibraryError as err:  # pragma: no cover - best effort
                     _LOGGER.warning("Could not switch back to owner: %s", err)
 
-    def _read_current_loans(self, account_id: str, name: str) -> list[Loan]:
-        """Read loans for the active account and stamp ownership on them."""
-        loans = self.get_loans()
-        for loan in loans:
-            loan.account_id = account_id
-            loan.account_name = name
-        return loans
+    def _populate_account(self, account: Account) -> None:
+        """Read loans + reservations for the currently-active account.
+
+        Loans are essential (a failure propagates so the account is skipped or
+        the update fails). Reservations are best-effort: if that endpoint errors
+        we keep the loans and log, rather than losing the whole account.
+        """
+        account.loans = self._stamp(self.get_loans(), account)
+        try:
+            account.reservations = self._stamp(self.get_reservations(), account)
+        except DDOLibraryError as err:
+            _LOGGER.warning(
+                "Could not read reservations for %s (%s): %s",
+                account.name,
+                account.account_id,
+                err,
+            )
+
+    @staticmethod
+    def _stamp(items: list, account: Account) -> list:
+        """Stamp the owning account onto each loan/reservation."""
+        for item in items:
+            item.account_id = account.account_id
+            item.account_name = account.name
+        return items
 
     def _primary_name(self, own_id: str) -> str:
         try:
