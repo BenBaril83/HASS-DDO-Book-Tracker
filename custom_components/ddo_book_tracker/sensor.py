@@ -118,6 +118,8 @@ class AccountSensor(_BaseSensor):
                     "due_date": ln.due_date.isoformat() if ln.due_date else None,
                     "days_until_due": ln.days_until_due,
                     "is_overdue": ln.is_overdue,
+                    "isbn": ln.isbn,
+                    "renewable": ln.renewable,
                 }
                 for ln in loans
             ],
