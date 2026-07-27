@@ -1,0 +1,42 @@
+# "Library books by card" — a single Markdown card that lists every book on
+# loan, grouped by library card, sorted by due date, for the HACS integration.
+#
+# It auto-discovers the integration's per-account sensors (any sensor with a
+# `books` attribute), so there are no entity IDs to fill in and it keeps working
+# if you add more cards/accounts later.
+#
+# To use: Edit dashboard → Add card → Manual → paste this YAML.
+
+type: markdown
+title: 📚 Library books by card
+content: |
+  {%- set accounts = states.sensor | selectattr('attributes.books', 'defined')
+        | sort(attribute='attributes.account_name')
+        | sort(attribute='attributes.is_primary', reverse=true) | list -%}
+  {%- set total = accounts | map(attribute='state') | map('int') | sum -%}
+  {%- set total_over = accounts | map(attribute='attributes.overdue_count') | map('int') | sum -%}
+  {%- set due = accounts | map(attribute='attributes.next_due_date') | select('string') | list | sort -%}
+  {%- set ns = namespace(md="## 📚 " ~ total ~ " books out" ~ (" · " ~ total_over ~ " overdue" if total_over > 0 else "") ~ (" · next due " ~ due[0] if due else "") ~ "\n") -%}
+  {%- if accounts | count == 0 -%}
+    {%- set ns.md = "No DDO library sensors found yet. Is the integration set up?" -%}
+  {%- endif -%}
+  {%- for a in accounts -%}
+    {%- set books = a.attributes.books | sort(attribute='due_date') -%}
+    {%- set star = "⭐ " if a.attributes.is_primary else "" -%}
+    {%- set od = a.attributes.overdue_count | int -%}
+    {%- set ns.md = ns.md ~ "\n### " ~ star ~ a.attributes.account_name ~ " — " ~ a.state ~ " out" ~ (", " ~ od ~ " overdue" if od > 0 else "") ~ "\n\n" -%}
+    {%- if books | count == 0 -%}
+      {%- set ns.md = ns.md ~ "Nothing out 🎉\n" -%}
+    {%- endif -%}
+    {%- for b in books -%}
+      {%- set d = b.days_until_due -%}
+      {%- if d is none -%}{%- set when = "—" -%}
+      {%- elif d < 0 -%}{%- set when = "⚠️ " ~ (-d) ~ "d overdue" -%}
+      {%- elif d == 0 -%}{%- set when = "⏰ due today" -%}
+      {%- elif d <= 3 -%}{%- set when = "⏰ " ~ d ~ "d left" -%}
+      {%- else -%}{%- set when = d ~ "d left" -%}
+      {%- endif -%}
+      {%- set ns.md = ns.md ~ "- **" ~ b.due_date ~ "** · " ~ when ~ " — " ~ b.title ~ " · _" ~ b.author ~ "_\n" -%}
+    {%- endfor -%}
+  {%- endfor -%}
+  {{ ns.md }}
