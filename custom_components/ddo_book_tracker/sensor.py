@@ -15,10 +15,14 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import DDOConfigEntry
+from . import DDOConfigEntry, catalog
 from .const import DOMAIN
 from .coordinator import DDOCoordinator
 from .models import Account
+
+# Cap the catalog embedded in a sensor attribute to keep it well under HA's
+# recommended per-attribute size (the newest entries are the ones people rate).
+_CATALOG_ATTR_LIMIT = 120
 
 
 async def async_setup_entry(
@@ -39,6 +43,8 @@ async def async_setup_entry(
     entities.append(NextDueSensor(coordinator, entry))
     entities.append(ReadyForPickupSensor(coordinator, entry))
     entities.append(ReservedSensor(coordinator, entry))
+    entities.append(ReadingHistorySensor(coordinator, entry))
+    entities.append(BooksToRateSensor(coordinator, entry))
     async_add_entities(entities)
 
 
@@ -252,3 +258,74 @@ class ReadyForPickupSensor(_BaseSensor):
                 for r in ready
             ]
         }
+
+
+def _book_dict(entry: dict) -> dict[str, Any]:
+    return {
+        "id": entry.get("id"),
+        "title": entry.get("title"),
+        "author": entry.get("author"),
+        "isbn": entry.get("isbn"),
+        "doc_type": entry.get("doc_type"),
+        "cards": entry.get("cards", []),
+        "assigned_to": entry.get("assigned_to", []),
+        "ratings": entry.get("ratings", {}),
+        "avg_rating": catalog.average_rating(entry),
+        "library_rating": entry.get("library_rating"),
+        "last_seen": entry.get("last_seen"),
+    }
+
+
+class ReadingHistorySensor(_BaseSensor):
+    """Every book the family has ever borrowed (the persistent catalog).
+
+    State is the catalog size; the `books` attribute carries the catalog (with
+    ratings and who-read-it) for dashboards, and `people` lists everyone seen.
+    """
+
+    _attr_icon = "mdi:bookshelf"
+    _attr_native_unit_of_measurement = "books"
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_name = "Reading history"
+
+    def __init__(self, coordinator: DDOCoordinator, entry: DDOConfigEntry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_reading_history"
+
+    @property
+    def _catalog(self) -> dict:
+        return self.coordinator.store.catalog
+
+    @property
+    def native_value(self) -> int:
+        return len(self._catalog)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        entries = catalog.to_list(self._catalog)
+        rated = sum(1 for e in entries if e.get("ratings"))
+        return {
+            "people": catalog.people(self._catalog),
+            "rated_count": rated,
+            "unrated_count": len(entries) - rated,
+            "books": [_book_dict(e) for e in entries[:_CATALOG_ATTR_LIMIT]],
+        }
+
+
+class BooksToRateSensor(_BaseSensor):
+    """How many catalogued books nobody has rated yet."""
+
+    _attr_icon = "mdi:star-outline"
+    _attr_native_unit_of_measurement = "books"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_name = "Books to rate"
+
+    def __init__(self, coordinator: DDOCoordinator, entry: DDOConfigEntry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_books_to_rate"
+
+    @property
+    def native_value(self) -> int:
+        return sum(
+            1 for e in self.coordinator.store.catalog.values() if not e.get("ratings")
+        )

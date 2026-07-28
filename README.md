@@ -161,9 +161,38 @@ integration: add your card once in the UI and get sensors with no YAML.
   a `reservations` list (holds — queue position or "ready for pickup").
 - **Total on loan**, **Overdue**, **Next due date**, **Reserved** (total holds),
   and **Ready for pickup** (holds waiting on the shelf) summary sensors.
+- **Reading history** (state = catalogue size; a `books` attribute with every
+  book, its ratings and who read it) and **Books to rate** summary sensors.
 
 Refresh interval and whether to include linked accounts are adjustable under
 the integration's **Configure** (options) button.
+
+### Reading history, ratings & "who read it"
+
+The integration keeps a **persistent catalogue** of every book that passes
+through your accounts (saved in HA storage, so books stay ratable after
+they're returned). It also ingests the library's own loan history where
+available — note the DDO accounts ship with history retention **off**, so the
+catalogue mostly grows going forward; enable "keep loan history" in each
+library account to have the library keep it too.
+
+Rate books and record who actually read them (independent of whose card
+borrowed them) via two services:
+
+- `ddo_book_tracker.rate_book` — `book_id`, `person`, `rating` (1–5, or 0 to clear)
+- `ddo_book_tracker.assign_book` — `book_id`, `person`, `assigned`
+
+Ready-made UI:
+
+- [`homeassistant/ddo_rating_package.yaml`](homeassistant/ddo_rating_package.yaml)
+  — a package of helpers + scripts that keeps book/person pickers in sync (no
+  entity IDs to configure).
+- [`homeassistant/dashboard_catalog.yaml`](homeassistant/dashboard_catalog.yaml)
+  — browse the catalogue (covers, stars, who read each book) and rate/assign
+  from a small form.
+
+This is the groundwork for **recommendations** (from ratings + per-person
+history) — a future addition.
 
 **Multiple logins:** you can add the integration more than once — one entry per
 card you have credentials for. Use this to cover a peer (e.g. spouse) card that

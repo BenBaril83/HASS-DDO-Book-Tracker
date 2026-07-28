@@ -16,7 +16,7 @@ def test_vendored_core_matches_library():
     # The integration ships a self-contained copy of the core logic (HACS only
     # installs custom_components/). Keep the copies byte-identical so a fix in
     # one never silently diverges from the other.
-    for name in ("client.py", "models.py"):
+    for name in ("client.py", "models.py", "catalog.py"):
         assert (INTEGRATION / name).read_text() == (PKG / name).read_text(), (
             f"{name} differs between ddo_tracker/ and the integration; "
             "re-copy it so the two stay in sync."

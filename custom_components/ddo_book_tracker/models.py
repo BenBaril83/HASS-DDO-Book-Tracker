@@ -159,13 +159,44 @@ class Reservation:
 
 
 @dataclass
+class HistoryItem:
+    """A previously-borrowed item from the library's loan history.
+
+    Only populated for accounts where the borrower enabled loan-history
+    retention in the library; otherwise the library returns nothing.
+    """
+
+    title: str
+    author: str
+    loan_date: Optional[date] = None
+    isbn: str = ""
+    doc_type: str = ""
+    library_rating: Optional[int] = None
+    account_id: str = ""
+    account_name: str = ""
+
+    @classmethod
+    def from_api(cls, item: dict[str, Any]) -> "HistoryItem":
+        rating_raw = str(item.get("rating", "") or "").strip()
+        return cls(
+            title=_clean_title(item.get("title", "")),
+            author=_clean_author(item.get("author", "")),
+            loan_date=parse_api_date(item.get("loanDate", "")),
+            isbn=_extract_isbn(item.get("image", "")),
+            doc_type=item.get("docType", ""),
+            library_rating=int(rating_raw) if rating_raw.isdigit() else None,
+        )
+
+
+@dataclass
 class Account:
-    """A borrower account, its current loans and its reservations."""
+    """A borrower account, its current loans, reservations and history."""
 
     account_id: str
     name: str
     loans: list[Loan] = field(default_factory=list)
     reservations: list[Reservation] = field(default_factory=list)
+    history: list[HistoryItem] = field(default_factory=list)
     is_primary: bool = False
 
     @property

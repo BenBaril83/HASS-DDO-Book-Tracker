@@ -1,0 +1,92 @@
+# Family library catalog: browse everything ever borrowed (with covers, star
+# ratings and who read each book) and rate / assign from a small form.
+#
+# Requirements:
+#   - HACS Frontend card "button-card" (custom:button-card).
+#   - The rating helpers/scripts from ddo_rating_package.yaml installed.
+#
+# To use: Edit dashboard → Add card → Manual → paste this YAML.
+
+type: vertical-stack
+cards:
+  # --- Rate / assign form -------------------------------------------------
+  - type: entities
+    title: ✍️ Rate a book
+    show_header_toggle: false
+    entities:
+      - entity: input_select.ddo_rate_book
+        name: Book
+      - entity: input_select.ddo_rate_person
+        name: Reader
+      - entity: input_number.ddo_rate_stars
+        name: Stars
+  - type: horizontal-stack
+    cards:
+      - type: button
+        name: Save rating
+        icon: mdi:star-check
+        tap_action:
+          action: call-service
+          service: script.ddo_submit_rating
+      - type: button
+        name: Mark as read
+        icon: mdi:book-account
+        tap_action:
+          action: call-service
+          service: script.ddo_submit_assignment
+
+  # --- Read-only catalog grid --------------------------------------------
+  - type: custom:button-card
+    show_icon: false
+    show_name: false
+    show_state: false
+    tap_action:
+      action: none
+    triggers_update: all
+    styles:
+      card:
+        - padding: 14px 16px 18px
+      grid:
+        - grid-template-areas: '"c"'
+        - grid-template-columns: 1fr
+      custom_fields:
+        c:
+          - justify-self: stretch
+    custom_fields:
+      c: |
+        [[[
+          const src = Object.values(hass.states).find(s => s.attributes && s.attributes.books && s.attributes.people !== undefined);
+          const books = src ? (src.attributes.books || []) : [];
+          const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          const stars = a => a ? ('★'.repeat(Math.round(a)) + '☆'.repeat(5-Math.round(a))) : '<span class="unrated">unrated</span>';
+          let html = `<div class="cat-sum">📖 ${books.length} in the family library${src?` · ${src.attributes.rated_count} rated`:''}</div>`;
+          if (!books.length) html += `<div class="unrated">Nothing catalogued yet — books appear here as they pass through your accounts.</div>`;
+          html += `<div class="cat-grid">`;
+          for (const b of books) {
+            const hue = ((String(b.title).length*47) % 360 + 360) % 360;
+            const cover = b.isbn ? `background-image:url(https://covers.openlibrary.org/b/isbn/${b.isbn}-M.jpg?default=false);` : '';
+            const readers = (b.assigned_to||[]).join(', ');
+            html += `<div class="cat-tile"><div class="cat-cover" style="--hue:${hue};${cover}"><span class="cat-scrim">${esc(b.title)}</span></div>`
+              + `<div class="cat-stars">${stars(b.avg_rating)}</div>`
+              + (readers ? `<div class="cat-readers">👤 ${esc(readers)}</div>` : '')
+              + `</div>`;
+          }
+          html += `</div>`;
+          return `<style>
+            .cat-sum { font-size: 1.02em; font-weight: 600; margin: 2px 2px 12px; }
+            .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 14px; }
+            .cat-tile { min-width: 0; }
+            .cat-cover { position: relative; aspect-ratio: 2/3; border-radius: 10px; overflow: hidden;
+              background-size: cover; background-position: center; box-shadow: 0 2px 7px #0000006b; }
+            .cat-cover::before { content: ""; position: absolute; inset: 0; z-index: -1;
+              background: linear-gradient(135deg, hsl(var(--hue),58%,56%), hsl(calc(var(--hue) + 45),60%,40%)); }
+            .cat-scrim { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 8px 6px;
+              font-size: .77em; font-weight: 600; line-height: 1.15; color: #fff;
+              background: linear-gradient(transparent, #000000a6 55%, #000000d9);
+              display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+            .cat-stars { margin: 4px 2px 0; color: #f5a623; font-size: .95em; letter-spacing: 1px; }
+            .cat-readers { font-size: .72em; opacity: .72; margin: 1px 2px 0;
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .unrated { opacity: .5; font-style: italic; font-size: .8em; }
+          </style>` + html;
+        ]]]

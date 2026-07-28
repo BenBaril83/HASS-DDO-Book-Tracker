@@ -1,0 +1,117 @@
+# DDO rating helpers, scripts, and picker-sync automation.
+#
+# This is a Home Assistant *package*. Enable packages once in configuration.yaml:
+#     homeassistant:
+#       packages: !include_dir_named packages
+# then drop this file in your `packages/` folder (e.g. packages/ddo_rating.yaml)
+# and restart. It creates the helpers/scripts the rating dashboard uses and keeps
+# the book/person dropdowns in sync with the integration — no entity IDs to
+# hard-code (it finds the "Reading history" sensor by its `people` attribute).
+
+input_select:
+  ddo_rate_book:
+    name: DDO book to rate
+    options:
+      - "(waiting for sync)"
+    icon: mdi:book-open-page-variant
+  ddo_rate_person:
+    name: DDO reader
+    options:
+      - "(waiting for sync)"
+    icon: mdi:account
+
+input_number:
+  ddo_rate_stars:
+    name: DDO rating stars
+    min: 1
+    max: 5
+    step: 1
+    mode: slider
+    icon: mdi:star
+
+script:
+  ddo_submit_rating:
+    alias: "DDO: submit rating"
+    mode: single
+    sequence:
+      - variables:
+          hist: >-
+            {{ states.sensor | selectattr('attributes.people', 'defined')
+               | map(attribute='entity_id') | list | first }}
+          book_id: >-
+            {% set sel = states('input_select.ddo_rate_book') %}
+            {% set ns = namespace(id='') %}
+            {% for b in (state_attr(hist, 'books') or []) %}
+            {% if (b.title ~ ' — ' ~ b.author) == sel %}{% set ns.id = b.id %}{% endif %}
+            {% endfor %}
+            {{ ns.id }}
+      - condition: template
+        value_template: "{{ book_id | trim != '' }}"
+      - action: ddo_book_tracker.rate_book
+        data:
+          book_id: "{{ book_id | trim }}"
+          person: "{{ states('input_select.ddo_rate_person') }}"
+          rating: "{{ states('input_number.ddo_rate_stars') | int }}"
+
+  ddo_submit_assignment:
+    alias: "DDO: mark selected book as read by person"
+    mode: single
+    sequence:
+      - variables:
+          hist: >-
+            {{ states.sensor | selectattr('attributes.people', 'defined')
+               | map(attribute='entity_id') | list | first }}
+          book_id: >-
+            {% set sel = states('input_select.ddo_rate_book') %}
+            {% set ns = namespace(id='') %}
+            {% for b in (state_attr(hist, 'books') or []) %}
+            {% if (b.title ~ ' — ' ~ b.author) == sel %}{% set ns.id = b.id %}{% endif %}
+            {% endfor %}
+            {{ ns.id }}
+      - condition: template
+        value_template: "{{ book_id | trim != '' }}"
+      - action: ddo_book_tracker.assign_book
+        data:
+          book_id: "{{ book_id | trim }}"
+          person: "{{ states('input_select.ddo_rate_person') }}"
+          assigned: true
+
+automation:
+  - alias: "DDO: sync rating pickers"
+    id: ddo_sync_rating_pickers
+    mode: restart
+    triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: time_pattern
+        minutes: "/30"
+    actions:
+      - variables:
+          hist: >-
+            {{ states.sensor | selectattr('attributes.people', 'defined')
+               | map(attribute='entity_id') | list | first }}
+          book_opts: >-
+            {% set ns = namespace(o=[]) %}
+            {% for b in (state_attr(hist, 'books') or []) %}
+            {% set ns.o = ns.o + [b.title ~ ' — ' ~ b.author] %}
+            {% endfor %}
+            {{ ns.o }}
+          cardholders: >-
+            {{ states.sensor | selectattr('attributes.account_name', 'defined')
+               | map(attribute='attributes.account_name') | list }}
+          person_opts: >-
+            {{ (cardholders + (state_attr(hist, 'people') or [])) | unique | list }}
+      - if: "{{ book_opts | count > 0 }}"
+        then:
+          - action: input_select.set_options
+            target:
+              entity_id: input_select.ddo_rate_book
+            data:
+              options: "{{ book_opts }}"
+      - if: "{{ person_opts | count > 0 }}"
+        then:
+          - action: input_select.set_options
+            target:
+              entity_id: input_select.ddo_rate_person
+            data:
+              options: "{{ person_opts }}"

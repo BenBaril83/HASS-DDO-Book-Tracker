@@ -78,6 +78,8 @@ class FakeSession:
             return FakeResponse(json_load("loans.json"))
         if "user/reservations" in url:
             return FakeResponse(json_load("reservations.json"))
+        if "user/loanhistory" in url:
+            return FakeResponse(json_load("loanhistory.json"))
         raise AssertionError(f"unexpected url {url}")
 
 
@@ -135,6 +137,17 @@ def test_get_loans_parses_items():
     loans = client.get_loans()
     assert len(loans) == 4
     assert loans[0].title == "Judy Moody"
+
+
+def test_get_loan_history_parses_items():
+    client = make_client()
+    client.login()
+    history = client.get_loan_history()
+    assert len(history) == 2
+    assert history[0].title == "Frog and Toad Are Friends"
+    assert history[0].isbn == "9780064440202"
+    assert history[0].library_rating == 4
+    assert history[1].library_rating is None  # empty rating -> None
 
 
 def test_get_reservations_parses_items():

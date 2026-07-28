@@ -1,0 +1,58 @@
+rate_book:
+  name: Rate a book
+  description: >-
+    Set a person's 1–5 star rating for a book in the catalog (rating 0 clears
+    it). Rating a book also marks that person as having read it.
+  fields:
+    book_id:
+      name: Book id
+      description: The catalog id of the book (e.g. isbn:9780763606855).
+      required: true
+      example: "isbn:9780763606855"
+      selector:
+        text:
+    person:
+      name: Person
+      description: Who is rating it (any name).
+      required: true
+      example: Noah
+      selector:
+        text:
+    rating:
+      name: Rating
+      description: 1–5 stars, or 0 to clear.
+      required: false
+      example: 5
+      selector:
+        number:
+          min: 0
+          max: 5
+          mode: slider
+
+assign_book:
+  name: Assign a book to a person
+  description: >-
+    Record who actually read a book (independent of whose card borrowed it).
+    Set "assigned" off to remove the person.
+  fields:
+    book_id:
+      name: Book id
+      description: The catalog id of the book (e.g. isbn:9780763606855).
+      required: true
+      example: "isbn:9780763606855"
+      selector:
+        text:
+    person:
+      name: Person
+      description: Who read it (any name).
+      required: true
+      example: Noah
+      selector:
+        text:
+    assigned:
+      name: Assigned
+      description: On to assign, off to remove.
+      required: false
+      default: true
+      selector:
+        boolean:

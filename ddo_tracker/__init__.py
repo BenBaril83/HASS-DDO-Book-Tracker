@@ -15,7 +15,8 @@ from .config import (
     load_config,
 )
 from .digest import EmailConfig, render_html, render_text, send_email, subject_line
-from .models import Account, Loan, Reservation, parse_api_date
+from . import catalog
+from .models import Account, HistoryItem, Loan, Reservation, parse_api_date
 from .report import all_loans, build_summary, format_table
 
 __version__ = "0.1.0"
@@ -32,6 +33,8 @@ __all__ = [
     "Account",
     "Loan",
     "Reservation",
+    "HistoryItem",
+    "catalog",
     "parse_api_date",
     "all_loans",
     "build_summary",
