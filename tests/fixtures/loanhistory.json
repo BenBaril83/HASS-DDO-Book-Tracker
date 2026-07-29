@@ -1,0 +1,26 @@
+{
+  "response": {
+    "items": [
+      {
+        "title": "Frog and Toad Are Friends /",
+        "author": "Lobel, Arnold, author.",
+        "loanDate": "20260510",
+        "docType": "Juvenile - Fiction",
+        "image": "https://webopac.ddo.qc.ca/iguana/php/electre.php?type=cover&ean=9780064440202!!!###!!!MATTYPE=JFIC",
+        "rating": "4",
+        "review": "",
+        "year": "1970"
+      },
+      {
+        "title": "The Very Hungry Caterpillar /",
+        "author": "Carle, Eric, author.",
+        "loanDate": "20260415",
+        "docType": "Juvenile - Fiction",
+        "image": "https://webopac.ddo.qc.ca/iguana/php/electre.php?type=cover&ean=9780399226908!!!###!!!MATTYPE=JFIC",
+        "rating": "",
+        "review": ""
+      }
+    ],
+    "totalRecords": 2
+  }
+}

@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Reading history, ratings & person assignment (recommendations groundwork).**
+  The client reads each account's loan history (`user/loanhistory`). The
+  integration keeps a **persistent catalogue** (HA storage) of every book seen
+  in loans/history — deduped by ISBN/title so books stay ratable after return —
+  and adds `rate_book` / `assign_book` services (1–5 stars per person; record
+  who actually read a book, independent of whose card borrowed it). New
+  **Reading history** and **Books to rate** sensors, a rating helpers/scripts
+  package, and a catalogue dashboard. Pure catalogue logic lives in
+  `ddo_tracker/catalog.py` with unit tests.
+
 - **Reservations / holds.** The client now reads each account's reservations
   (`user/reservations`); the integration exposes them on the per-account sensor
   (`reservations` list with queue position or "ready for pickup" + pickup

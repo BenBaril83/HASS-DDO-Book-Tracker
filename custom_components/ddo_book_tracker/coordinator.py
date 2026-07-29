@@ -22,6 +22,7 @@ from .const import (
     DOMAIN,
 )
 from .models import Account
+from .store import CatalogStore
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class DDOCoordinator(DataUpdateCoordinator[list[Account]]):
         self._barcode = entry.data[CONF_BARCODE]
         self._pin = entry.data[CONF_PIN]
         self._institution = entry.data.get(CONF_INSTITUTION, DEFAULT_INSTITUTION)
+        self.store = CatalogStore(hass, entry.entry_id)
         super().__init__(
             hass,
             _LOGGER,
@@ -58,9 +60,14 @@ class DDOCoordinator(DataUpdateCoordinator[list[Account]]):
 
     async def _async_update_data(self) -> list[Account]:
         try:
-            return await self.hass.async_add_executor_job(self._fetch)
+            accounts = await self.hass.async_add_executor_job(self._fetch)
         except DDOAuthError as err:
             # Surfaces as a reauth-worthy error / repair in HA.
             raise UpdateFailed(f"Authentication failed: {err}") from err
         except DDOLibraryError as err:
             raise UpdateFailed(f"Error talking to the library: {err}") from err
+
+        # Fold everything we saw into the persistent catalog (history + ratings
+        # survive here even after a book is returned and drops off the API).
+        await self.store.async_ingest(accounts)
+        return accounts

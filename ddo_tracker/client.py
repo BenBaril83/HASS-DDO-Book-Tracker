@@ -32,7 +32,7 @@ from typing import Any, Optional
 
 import requests
 
-from .models import Account, Loan, Reservation
+from .models import Account, HistoryItem, Loan, Reservation
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -247,6 +247,22 @@ class DDOLibraryClient:
         items = response.get("items", []) or []
         return [Reservation.from_api(item) for item in items]
 
+    def get_loan_history(self) -> list[HistoryItem]:
+        """Return the loan history for the *currently active* account.
+
+        Empty unless the borrower enabled loan-history retention in the library.
+        """
+        response = self._post(
+            "user/loanhistory",
+            {
+                "sessionId": self._require_login(),
+                "range": {"from": 1, "to": 500},
+                "sort": {"sortBy": "!LoanDate", "sortDirection": "DESC"},
+            },
+        )
+        items = response.get("items", []) or []
+        return [HistoryItem.from_api(item) for item in items]
+
     def switch_user(self, user_id: str) -> None:
         """Switch the active borrower to a linked account by its id."""
         self._post(
@@ -333,6 +349,15 @@ class DDOLibraryClient:
         except DDOLibraryError as err:
             _LOGGER.warning(
                 "Could not read reservations for %s (%s): %s",
+                account.name,
+                account.account_id,
+                err,
+            )
+        try:
+            account.history = self._stamp(self.get_loan_history(), account)
+        except DDOLibraryError as err:
+            _LOGGER.warning(
+                "Could not read loan history for %s (%s): %s",
                 account.name,
                 account.account_id,
                 err,
