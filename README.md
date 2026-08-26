@@ -206,9 +206,14 @@ fill in; add via **Edit dashboard → Add card → Manual**):
   — a plain **Markdown** card listing every book grouped by card and sorted by
   due date, with overdue/due-soon flags and a totals header. No extra installs.
 - [`homeassistant/dashboard_fancy.yaml`](homeassistant/dashboard_fancy.yaml)
-  — a **cover-tile "bookshelf"** grouped by family member with color-coded due
-  badges. Covers come from Open Library by ISBN (gradient fallback otherwise).
-  Requires the HACS **Frontend** card `button-card` (`custom:button-card`).
+  — a **cover-tile "bookshelf"**: one combined, de-duplicated shelf of
+  everything the family has out, sorted by due date with color-coded due badges
+  and a small "who has it" label per book. (DDO's owner card reports the whole
+  family's loans as an aggregate and each child card repeats its own subset, so
+  the shelf collapses the aggregate + child copy of a checkout into a single
+  tile rather than showing it once per card.) Covers come from Open Library by
+  ISBN (gradient fallback otherwise). Requires the HACS **Frontend** card
+  `button-card` (`custom:button-card`).
 
 **Notifications:** [`homeassistant/automation_hold_ready.yaml`](homeassistant/automation_hold_ready.yaml)
 sends a push when a hold becomes ready for pickup (off the **Ready for pickup**

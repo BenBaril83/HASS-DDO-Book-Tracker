@@ -1,4 +1,5 @@
 import json
+from datetime import date, timedelta
 from pathlib import Path
 
 from ddo_tracker.calendar import build_ics
@@ -68,9 +69,19 @@ def test_ics_escapes_special_characters():
 
 
 def test_render_text_groups_by_urgency():
-    text = render_text(sample_accounts())
+    accounts = sample_accounts()
+    # Add a loan due within 3 days so the "soon" bucket is populated regardless
+    # of when the suite runs. The fixture's due dates are absolute, so relying
+    # on them for a relative "due within 3 days" bucket is a time-bomb.
+    soon = Loan.from_api({"title": "Due Soon Book", "author": "X"})
+    soon.due_date = date.today() + timedelta(days=2)
+    soon.account_name = accounts[0].name
+    accounts[0].loans.append(soon)
+
+    text = render_text(accounts)
     assert "Judy Moody" in text
-    assert "Due within 3 days" in text  # 2026-07-30 items relative to 2026-07-27
+    assert "Due within 3 days" in text
+    assert "Due Soon Book" in text
 
 
 def test_render_html_is_escaped_and_tabular():

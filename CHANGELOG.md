@@ -5,6 +5,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Fancy "bookshelf" dashboard no longer splits by card or double-counts.**
+  DDO's owner card reports the whole family's loans as an aggregate while each
+  linked child card repeats its own subset, so the old one-section-per-card
+  layout showed every book twice and doubled the totals (e.g. "42 out" for 21
+  books). The dashboard now renders a single combined shelf, collapsing the
+  aggregate + child copy of a checkout into one tile (preferring the child's
+  name for the small "who has it" label) and sorting everything by due date.
+
 ### Added
 - **Reading history, ratings & person assignment (recommendations groundwork).**
   The client reads each account's loan history (`user/loanhistory`). The
