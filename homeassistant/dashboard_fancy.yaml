@@ -127,24 +127,24 @@ custom_fields:
         .ddo-summary .over { color: #e5484d; }
         .ddo-summary .ready { color: #46a758; }
         .ddo-empty { opacity: .6; font-style: italic; margin: 2px 2px 4px; }
-        .ddo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 14px; }
+        .ddo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 11px; }
         .ddo-tile { min-width: 0; text-align: left; }
-        .ddo-cover { position: relative; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden;
+        .ddo-cover { position: relative; aspect-ratio: 2 / 3; border-radius: 9px; overflow: hidden;
           background-size: cover; background-position: center; box-shadow: 0 2px 7px #0000006b; }
         .ddo-cover::before { content: ""; position: absolute; inset: 0; z-index: -1;
           background: linear-gradient(135deg, hsl(var(--hue), 58%, 56%), hsl(calc(var(--hue) + 45), 60%, 40%)); }
-        .ddo-badge { position: absolute; top: 6px; right: 6px; padding: 2px 7px; border-radius: 999px;
-          font-size: .72em; font-weight: 700; color: #fff; box-shadow: 0 1px 3px #0007; }
+        .ddo-badge { position: absolute; top: 5px; right: 5px; padding: 1px 6px; border-radius: 999px;
+          font-size: .64em; font-weight: 700; color: #fff; box-shadow: 0 1px 3px #0007; }
         .ddo-badge.over { background: #e5484d; } .ddo-badge.soon { background: #f76808; }
         .ddo-badge.ok { background: #46a758; } .ddo-badge.far { background: #5b6472; }
         .ddo-badge.none { background: #5b6472; }
-        .ddo-scrim { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 8px 6px;
-          font-size: .77em; font-weight: 600; line-height: 1.15; color: #fff;
+        .ddo-scrim { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 5px;
+          font-size: .68em; font-weight: 600; line-height: 1.12; color: #fff;
           background: linear-gradient(transparent, #000000a6 55%, #000000d9);
           display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .ddo-author { font-size: .72em; opacity: .72; margin: 4px 2px 0; line-height: 1.2;
+        .ddo-author { font-size: .64em; opacity: .72; margin: 3px 1px 0; line-height: 1.2;
           display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-        .ddo-owner { font-size: .7em; opacity: .85; margin: 2px 2px 0; line-height: 1.2;
+        .ddo-owner { font-size: .62em; opacity: .85; margin: 1px 1px 0; line-height: 1.2;
           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .ddo-holds { margin: 18px 2px 0; }
         .ddo-holds-h { font-size: .72em; font-weight: 700; opacity: .6; text-transform: uppercase;
